@@ -1,0 +1,7 @@
+line-length = 110
+target-version = "py312"
+extend-exclude = [".venv", "static"]
+
+[lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008", "E501"]  # FastAPI Depends() defaults; long regex/CSS lines

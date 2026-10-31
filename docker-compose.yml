@@ -1,0 +1,67 @@
+# Local stack: app (API + UI) + Postgres.
+#   docker compose up --build                 → http://localhost:8080
+#   docker compose --profile dev up           → + Vite hot reload on :5173
+#   docker compose --profile adkweb up        → + original ADK Web UI on :8000 (like the codelab)
+name: blogger-agent
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: blogger
+      POSTGRES_USER: blogger
+      POSTGRES_PASSWORD: blogger
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U blogger -d blogger"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    image: blogger-agent:local
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://blogger:blogger@db:5432/blogger
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  ui-dev:
+    profiles: ["dev"]
+    image: node:20-alpine
+    working_dir: /ui
+    command: sh -c "npm install --no-audit --no-fund && npm run dev"
+    environment:
+      VITE_BACKEND_URL: http://app:8080
+    volumes:
+      - ./frontend:/ui
+      - ui_node_modules:/ui/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - app
+
+  adk-web:
+    profiles: ["adkweb"]
+    image: blogger-agent:local
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://blogger:blogger@db:5432/blogger
+    command: sh -c "adk web --host 0.0.0.0 --port 8000 --session_service_uri \"$$DATABASE_URL\" /app"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  ui_node_modules:

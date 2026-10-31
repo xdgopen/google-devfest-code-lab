@@ -1,0 +1,55 @@
+# CI/CD: test → build → push → deploy.
+#   gcloud builds submit --config deploy/cloudbuild.yaml --region=us-east1 \
+#     --substitutions=_REGION=us-east1 .
+substitutions:
+  _REGION: us-east1
+  _SERVICE: bloggeragent
+  _AR_REPO: blogger-repo
+  _SA_NAME: blogger-agent-sa
+  _SQL_INSTANCE: blogger-pg
+  _DB_SECRET: blogger-database-url
+  _MODEL: gemini-3.5-flash
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+
+steps:
+  - id: backend-tests
+    name: python:3.12-slim
+    dir: backend
+    entrypoint: bash
+    args: ["-c", "pip install -q -r requirements-dev.txt && python -m pytest -q"]
+
+  - id: frontend-tests
+    name: node:20-alpine
+    dir: frontend
+    entrypoint: sh
+    args: ["-c", "npm ci --no-audit --no-fund && npx vitest run"]
+
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA:-${BUILD_ID}}", "."]
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA:-${BUILD_ID}}"]
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA:-${BUILD_ID}}
+      - --region=${_REGION}
+      - --service-account=${_SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com
+      - --add-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_SQL_INSTANCE}
+      - --set-secrets=DATABASE_URL=${_DB_SECRET}:latest
+      - --set-env-vars=GOOGLE_GENAI_USE_VERTEXAI=TRUE,GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=global,MODEL=${_MODEL},ARTIFACT_BUCKET=${PROJECT_ID}-blogger-artifacts,ENABLE_MEMORY=true
+      - --cpu=1
+      - --memory=1Gi
+      - --timeout=900
+      - --min-instances=0
+      - --max-instances=3
+      - --allow-unauthenticated

@@ -1,0 +1,59 @@
+/*
+ * Design tokens – from the `main-design` skill (.claude/skills/main-design).
+ * Brand fonts are proprietary → Nunito (Google Fonts) as the closest rounded sans.
+ * Accessibility adjustments required by the skill's own audit:
+ *  - accent #1cb0f6 fails AA as text → used for fills/borders/focus only;
+ *    link text uses --accent-strong and is always underlined.
+ *  - muted #777 fails AA on the sky background → only for non-essential hints
+ *    on white surfaces; readable secondary text uses --text-secondary.
+ */
+:root {
+  /* color */
+  --color-primary: #a5ed6e;
+  --color-on-primary: #111111;
+  --color-primary-shadow: #79c84a;
+  --color-bg: #ddf4ff;
+  --color-surface: #ffffff;
+  --color-text: #3c3c3c;
+  --color-text-secondary: #555555;
+  --color-text-muted: #777777;
+  --color-accent: #1cb0f6;
+  --color-accent-strong: #0a6fa3;
+  --color-border: #c9e7f7;
+  --color-danger: #c0392b;
+  --color-danger-bg: #ffe5e2;
+  --color-warning-bg: #fff4d6;
+  --color-success-bg: #e9fbdc;
+
+  /* type */
+  --font-family: "Nunito", "duolingo-sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: 700 clamp(18px, 4vw, 26px) / 1.5 var(--font-family);
+  --font-heading: 600 15px / 1.5 var(--font-family);
+  --font-body: 700 15px / 1.45 var(--font-family);
+  --tracking-display: 0.8px;
+
+  /* space – 10px base */
+  --space-1: 10px;
+  --space-2: 20px;
+  --space-3: 30px;
+  --space-4: 40px;
+  --space-5: 50px;
+
+  /* shape & depth */
+  --radius-lg: 12px;
+  --radius-sm: 2px;
+  --radius-pill: 999px;
+  --shadow-card: 0 0 5px rgba(0, 0, 0, 0.12);
+
+  /* motion */
+  --motion-duration: 300ms;
+  --motion-easing: linear;
+
+  /* a11y */
+  --touch-target: 44px;
+  --focus-ring: 2px solid var(--color-accent-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-duration: 0ms; }
+}

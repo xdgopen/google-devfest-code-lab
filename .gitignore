@@ -1,0 +1,22 @@
+# env & secrets
+.env
+*.pem
+*-key.json
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.db
+.adk/
+backend/static/
+# node
+node_modules/
+frontend/dist/
+# os / ide
+.DS_Store
+.idea/
+.vscode/
